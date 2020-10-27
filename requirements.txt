@@ -1,0 +1,5 @@
+newspaper
+flask
+json
+nltk
+gunicorn
