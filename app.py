@@ -1,6 +1,5 @@
 # pip3 install newspaper3k
 from newspaper import Article
-import json
 import nltk
 import flask
 from flask import request, jsonify
