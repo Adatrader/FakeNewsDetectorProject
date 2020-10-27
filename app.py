@@ -3,8 +3,7 @@ from newspaper import Article
 import nltk
 import flask
 from flask import request, jsonify
-import requests
-# nltk.download('punkt')
+nltk.download('punkt')
 
 
 # Debug allows for changes to be seen in real time.
