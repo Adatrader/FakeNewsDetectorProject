@@ -1,4 +1,5 @@
-newspaper3k
+newspaper
 flask
+json
 nltk
 gunicorn

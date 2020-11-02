@@ -1,0 +1,44 @@
+    
+<!-- <h1>News Site WebScraper API</h1>
+<h3>You are at: /home/</h3>
+<p>To submit a new url to database: POST '/api/v1/?url=url.com'
+<p>To view all submitted urls in the database: '/api/v1/newsurl/all' </p>
+<p>To get metadata based on news url id : '/api/v1/newsurl/?id=xxxxxx' </p> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <link rel="shortcut icon" href="../static/FND.ico" />
+    <link rel="stylesheet" href="../static/style.css" />
+    <title>Fake News Detector</title>
+</head>
+<body>
+    <div class="container">
+        <a href= "/"><img src="../static/logo.png" alt="" class="logo"></a>
+        {% if message %}
+        <p class="message">{{ message | safe }}</p>
+        {% endif %}
+        <form action="/results" method="POST">
+            <div class="form-group">
+            <center>
+              <h2>Determine Authenticity of a News Article</h2>
+              <h4>Submit a Url to our Knowledge Base and Neural Network.</h4></center>
+              <br>
+              <input
+                type="text"
+                name="url_submit"
+                placeholder="https://www.example.com"
+              />
+            </div>
+            <input type="submit" value="Submit" class="btn" />
+      </form>
+      <form action="https://documenter.getpostman.com/view/13246655/TVYGbcxp">
+        <button type="submit" class="btn">API Documentation</button>
+    </form>
+    </div>
+
+</body>
+</html>

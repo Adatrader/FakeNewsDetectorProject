@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="../static/FND.ico" />
+    <link rel="stylesheet" href="../static/style.css" />
+    <title>Results Page</title>
+</head>
+<body>
+    <div class = "container">
+        <a href= "/"><img src="../static/logo.png" alt="" class="logo"></a>
+        <br>
+        <center><h2> Confidence score: </h2>
+        <h1>{{conf}}</h1><br>
+        <h3> Results for:</h3>
+        <a href={{urlTitle}}>{{urlTitle}}</a></center>
+    </div>
+    <div class= "container">
+        <br>
+        <h3>News Site Information:</h3>
+         <table border = 1>
+            {% for key, value in result.items() %}
+            <tr>
+               <th> {{ key }} </th>
+               <td> {{ value }} </td>
+            </tr>
+         {% endfor %}
+        </table> 
+    </div>
+</body>
+</html>
