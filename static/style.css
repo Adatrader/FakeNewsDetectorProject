@@ -60,7 +60,7 @@ textarea {
 
 .btn {
   display: block;
-  width: 80%;
+  width: 50%;
   background: #1261a0;
   color: #fff;
   padding: 10px 20px;
@@ -73,8 +73,8 @@ textarea {
 .btnDocs {
   display: block;
   width: 30%;
-  background: #0bb5ff;
-  color: rgb(8, 8, 8);
+  background: #1261a0;
+  color: #fff;
   padding: 10px 20px;
   border: none;
   cursor: pointer;
