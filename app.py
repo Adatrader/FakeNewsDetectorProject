@@ -5,11 +5,11 @@ import flask
 from flask import Flask, request, jsonify, render_template
 # To make requests
 import requests
-# nltk.download('punkt') #TODO: Uncomment during deployment
+nltk.download('punkt') #TODO: Uncomment during deployment
 
 # Debug allows for changes to be seen in real time.
 app = flask.Flask(__name__)
-app.config["DEBUG"] = True  # TODO: Set to false during deployment
+app.config["DEBUG"] = False  # TODO: Set to false during deployment
 
 # Place holder for landing page for webscraper
 
@@ -259,4 +259,3 @@ class newsUrl:
         return article.summary
 
 
-app.run()  # TODO: Comment during deployment
