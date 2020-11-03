@@ -1,4 +1,5 @@
 newspaper3k
 flask
 nltk
+bs4
 gunicorn

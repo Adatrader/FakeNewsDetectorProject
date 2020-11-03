@@ -1,7 +1,9 @@
 # pip3 install newspaper3k
 from newspaper import Article
+import newspaper
 import nltk
 import flask
+from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify, render_template
 # To make requests
 import requests
@@ -30,11 +32,7 @@ def readthedocs():
 def pageNotFound(e):
     return "<h1>Error 404:</h1><p>Page not found.</p>", 404
 
-# use beautiful soup for KB team
-# url - get href tags (excluding root domains)
-# pass along all twitter
 
-# add origin as an attribute in json
 # Twitter
 #       POST {id}
 #             addition attributes from twitter + url
@@ -82,7 +80,6 @@ def getId():
     return 0
 
 
-
 # For front end results page
 @app.route('/results', methods=['POST'])
 def results():
@@ -98,8 +95,9 @@ def results():
     jsonGenerated = jsonify(dictObj)  # Send to NN/KB Team
     print(dictObj)
     # TODO: Sent to NN team (get response with confidence score)
-    # confidenceScore = requests.post(url = 'www.yourNNServer.com', data=jsonObj)
-
+    # returnedNN = requests.post(url = 'www.yourNNServer.com', data=jsonGenerated)
+    # tempConf = returnedNN['confidence_score']
+    # combinedObj['confidence_score'] = tempConf
     return render_template('result.html', urlTitle=dictObj.get('url'),
                            conf=dictObj.get('confidence_score'), result=dictObj.get('url_info'))
 
@@ -117,9 +115,11 @@ def twitter():
     # Returned dictionary from scraper
     dictObj = obj.createJSON(obj.url, obj.origin)
     combinedObj = Merge(content, dictObj)
-    jsonGenerated = jsonify(combinedObj)  # Send to NN/KB Team
-    # TODO: Sent to NN team (get response with confidence score)
-    # confidenceScore = requests.post(url = 'www.yourNNServer.com', data=jsonObj)
+    jsonGenerated = jsonify(combinedObj)
+    # TODO: Sent jsonGenerated NN /KB team (get response with confidence score)
+    # returnedNN = requests.post(url = 'www.yourNNServer.com', data=jsonGenerated)
+    # tempConf = returnedNN['confidence_score']
+    # combinedObj['confidence_score'] = tempConf
     return jsonify(combinedObj)
 
 
@@ -134,10 +134,11 @@ def facebook():
     # Returned dictionary from scraper
     dictObj = obj.createJSON(obj.url, obj.origin)
     combinedObj = Merge(content, dictObj)
-    jsonGenerated = jsonify(combinedObj)  # Send to NN/KB Team
-    # TODO: Sent to NN team (get response with confidence score)
-    # confidenceScore = requests.post(url = 'www.yourNNServer.com', data=jsonObj)
-
+    jsonGenerated = jsonify(combinedObj)
+    # TODO: Send jsonGenerated to NN / KB team (get response with confidence score)
+    # returnedNN = requests.post(url = 'www.yourNNServer.com', data=jsonGenerated)
+    # tempConf = returnedNN['confidence_score']
+    # combinedObj['confidence_score'] = tempConf
     return jsonify(combinedObj)
 
 
@@ -154,9 +155,14 @@ class newsUrl:
 
     def createJSON(self, url, origin):
 
+        # Get title, subtitle, and citation urls
+        titleCitationObj = newspaper.build(self.url)
+        siteName = self.getSiteName(titleCitationObj)
+        subtitle = self.getSubtitle(titleCitationObj)
         # Metadata
         article = self.parseUrl(self.url)
         author = self.getAuthor(article)
+        citUrl = self.getCitationUrls(article)
 
         # Encoding for json string is adding the \u, \t, \n etc
         # shouldn't cause issues when recieved and decoded -> print(text) here to show
@@ -164,7 +170,7 @@ class newsUrl:
 
         date = self.getDate(article)
         title = self.getTitle(article)
-
+        # siteName = self.getSiteName(Article(self.url))
         # NLP info
         summary = self.getSummary(article)
         keywords = self.getKeywords(article)
@@ -175,11 +181,16 @@ class newsUrl:
         totalDict['confidence_score'] = 0
         tempDict = {
             'title': title,
+            'site_name': str(siteName),
+            'subtitle': str(subtitle),
             'publish_date': str(date),
             'authors': author,
-            'summary': summary,
-            'keywords': keywords,
-            'content': text
+            'natural_language_processing': {
+                'summary': summary,
+                'keywords': keywords
+            },
+            'content': text,
+            'citation_urls': citUrl
         }
         totalDict['url_info'] = tempDict
 
@@ -218,8 +229,23 @@ class newsUrl:
     def getTitle(self, article):
         return article.title
 
-    def getSiteName(self, article):
-        return article.site
+    # Site Name
+    def getSiteName(self, newspaper):
+        return newspaper.brand
+
+    # Site Description
+    def getSubtitle(self, newspaper):
+        return newspaper.description
+
+    # Citation Urls
+    def getCitationUrls(self, article):
+        urlsArr = []
+        soup = BeautifulSoup(article.html, 'html.parser')
+        for link in soup.find_all('a'):
+            linkTemp = link.get('href')
+            if linkTemp.startswith('http'):
+                urlsArr.append(linkTemp)
+        return urlsArr
 
     # Natural language processing to generate summary and keywords from article
     # Keywords
