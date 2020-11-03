@@ -18,6 +18,13 @@ body {
   padding: 0 2rem;
 }
 
+.containerTable {
+  max-width: 1000px;
+  margin: 1rem auto;
+  overflow: auto;
+  padding: 0 2rem;
+}
+
 h1 {
   color: #777;
   margin-top: 15px;
