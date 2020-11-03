@@ -81,16 +81,6 @@ def getId():
 
     return 0
 
-# TODO: Last working before testing new endpoints
-# # Submit new url for webscraping
-# @app.route('/api/v1/webapp/', methods=['POST'])
-# def newEntry():
-#     urlPassed = request.args.get('url')
-#     obj = newsUrl(urlPassed)
-#     jsonObj = obj.createJSON(obj.url)
-#     # Sent to NN team (get response with confidence score)
-#     # confidenceScore = requests.post(url = 'www.yourNNServer.com', data=jsonObj)
-#     return jsonObj
 
 
 # For front end results page
