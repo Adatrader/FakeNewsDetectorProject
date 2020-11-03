@@ -11,13 +11,13 @@ nltk.download('punkt') #TODO: Uncomment during deployment
 app = flask.Flask(__name__)
 app.config["DEBUG"] = False  # TODO: Set to false during deployment
 
-# Place holder for landing page for webscraper
-
 
 @app.route('/')
 def index():
     # f = open('home.html')
     return render_template('index.html')
+
+# Unused now (Directs to postman)
 
 
 @app.route('/api/v1/readthedocs')
@@ -65,52 +65,9 @@ def pageNotFound(e):
 #       DELETE {id}
 #             response: deleted
 
-# Twitter
-
-# TWITTER API
-# Data from Tweet:
-# ID
-# Text
-# Entities
-# •	Hasgtags
-# •	Symbols
-# •	User-mentions
-# •	Urls
-# •	Media
-# User
-# •	ID
-# •	Name
-# •	Screenname
-# •	Location
-# •	Description
-# •	url
-# •	entities
-# •	Protected
-# •	Followers_count
-# •	Friends_count
-# •	Listed_count
-# •	Created_at
-# •	Favourites_count
-# •	Verified
-# •	Statuses_count
-# •	Contributors_enabled
-# •	Profile_image_url
-# Geo
-# Coordinates
-# Place
-# Contributors
-
-
-# Facebook
-# Data extracted from Facebook post
-
-# > datetime created_time - Time Created
-# > User|Page from - ID of user who created the post
-# > string message - Post message
-# > string link - Link in the post
-# > uri permalink_url - Link to the post
-
 # Get all the urls in database
+
+
 @app.route('/api/v1/newsurl/all', methods=['GET'])
 def getAll():
 
@@ -144,46 +101,68 @@ def results():
 
         if urlPassed == '':
             return render_template('index.html', message='Please enter required field')
-    obj = newsUrl(urlPassed)
-    dictObj = obj.createJSON(obj.url)  # Returned dictionary from scraper
-
-    tempDict = dict()
-    tempDict['url'] = dictObj.get('url')
-    tempDict['url_info'] = dictObj
-    tempDict['confidence_score'] = 0.5
-    tempDict['origin'] = "WebApp"
-    jsonGenerated = jsonify(tempDict)  # Send to NN/KB Team
-    # print(tempDict)
-
+    origin = "WebApp"
+    obj = newsUrl(urlPassed, origin)
+    # Returned dictionary from scraper
+    dictObj = obj.createJSON(obj.url, obj.origin)
+    jsonGenerated = jsonify(dictObj)  # Send to NN/KB Team
+    print(dictObj)
     # TODO: Sent to NN team (get response with confidence score)
     # confidenceScore = requests.post(url = 'www.yourNNServer.com', data=jsonObj)
-    return render_template('result.html', urlTitle=tempDict.get('url'),
-                           conf=tempDict.get('confidence_score'), result=tempDict.get('url_info'))
+
+    return render_template('result.html', urlTitle=dictObj.get('url'),
+                           conf=dictObj.get('confidence_score'), result=dictObj.get('url_info'))
 
 # Submit new url for webscraping
 
 
-@app.route('/api/v1/twitter/', methods=['POST'])
-def newEntry():
-    content = request.json
+@app.route('/api/v1/twitter', methods=['POST'])
+def twitter():
+    content = request.get_json()
+    if content == None:
+        return {"response": "400 Bad Request"}
     urlGiven = content['url']
+    origin = "Twitter"
+    obj = newsUrl(urlGiven, origin)
+    # Returned dictionary from scraper
+    dictObj = obj.createJSON(obj.url, obj.origin)
+    combinedObj = Merge(content, dictObj)
+    jsonGenerated = jsonify(combinedObj)  # Send to NN/KB Team
+    # TODO: Sent to NN team (get response with confidence score)
+    # confidenceScore = requests.post(url = 'www.yourNNServer.com', data=jsonObj)
+    return jsonify(combinedObj)
 
-    print(urlGiven)  # For testing
 
-    urlObj = newsUrl(urlGiven)  # Create newsUrl object
-    # Store returned json from webscrapper
-    tempDict = urlObj.createJSON(urlObj.url)
-    # Sent to NN team (get response with confidence score)
+@app.route('/api/v1/facebook', methods=['POST'])
+def facebook():
+    content = request.get_json()
+    if content == None:
+        return {"response": "400 Bad Request"}
+    urlGiven = content['url']
+    origin = "Facebook"
+    obj = newsUrl(urlGiven, origin)
+    # Returned dictionary from scraper
+    dictObj = obj.createJSON(obj.url, obj.origin)
+    combinedObj = Merge(content, dictObj)
+    jsonGenerated = jsonify(combinedObj)  # Send to NN/KB Team
+    # TODO: Sent to NN team (get response with confidence score)
     # confidenceScore = requests.post(url = 'www.yourNNServer.com', data=jsonObj)
 
-    return jsonify(tempDict)
+    return jsonify(combinedObj)
+
+
+# Merge two dictionaries
+def Merge(dict1, dict2):
+    res = {**dict1, **dict2}
+    return res
 
 
 class newsUrl:
-    def __init__(self, urlGiven):
+    def __init__(self, urlGiven, origin):
         self.url = urlGiven
+        self.origin = origin
 
-    def createJSON(self, url):
+    def createJSON(self, url, origin):
 
         # Metadata
         article = self.parseUrl(self.url)
@@ -201,8 +180,10 @@ class newsUrl:
         keywords = self.getKeywords(article)
 
         # Create dictionary
+        totalDict = {'url': url}
+        totalDict['origin'] = origin
+        totalDict['confidence_score'] = 0
         tempDict = {
-            'url': url,
             'title': title,
             'publish_date': str(date),
             'authors': author,
@@ -210,7 +191,9 @@ class newsUrl:
             'keywords': keywords,
             'content': text
         }
-        return tempDict
+        totalDict['url_info'] = tempDict
+
+        return totalDict
         # return jsonify(tempDict)
 
     def parseUrl(self, url):
@@ -257,5 +240,4 @@ class newsUrl:
     def getSummary(self, article):
         article.nlp()
         return article.summary
-
 
