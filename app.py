@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify, render_template
 # To make requests
 import requests
-nltk.download('punkt') #TODO: Uncomment during deployment
+nltk.download('punkt')  # TODO: Uncomment during deployment
 
 # Debug allows for changes to be seen in real time.
 app = flask.Flask(__name__)
@@ -31,53 +31,6 @@ def readthedocs():
 @app.errorhandler(404)
 def pageNotFound(e):
     return "<h1>Error 404:</h1><p>Page not found.</p>", 404
-
-
-# Twitter
-#       POST {id}
-#             addition attributes from twitter + url
-#             response: 200 Submitted
-#       GET {id}
-#             response: JSON with confidence score and parsed information
-#       GET {all}
-#             response: JSON array with all id's in sql database
-#       DELETE {id}
-#             response: deleted
-# Facebook
-#       POST {id}
-#             addition attributes from facebook + url
-#             response: 200 Submitted
-#       GET {id}
-#             response: JSON with confidence score and parsed information
-#       GET {all}
-#             response: JSON array with all id's in sql database
-#       DELETE {id}
-#             response: deleted
-# Web App
-#        POST {id}
-#             response: 200 Submitted
-#       GET {id}
-#             response: JSON with confidence score and parsed information
-#       GET {all}
-#             response: JSON array with all id's in sql database
-#       DELETE {id}
-#             response: deleted
-
-# Get all the urls in database
-
-
-@app.route('/api/v1/newsurl/all', methods=['GET'])
-def getAll():
-
-    return 0
-
-# Get json of url in database
-
-
-@app.route('/api/v1/newsurl/', methods=['GET'])
-def getId():
-
-    return 0
 
 
 # For front end results page
@@ -160,7 +113,14 @@ class newsUrl:
         siteName = self.getSiteName(titleCitationObj)
         subtitle = self.getSubtitle(titleCitationObj)
         # Metadata
-        article = self.parseUrl(self.url)
+        try:
+            article = self.parseUrl(self.url)
+        except:
+            totalDict = {'url': url}
+            totalDict['origin'] = origin
+            totalDict['confidence_score'] = 0
+            totalDict['url_info'] = "Unable to Parse"
+            return totalDict
         author = self.getAuthor(article)
         citUrl = self.getCitationUrls(article)
 
@@ -243,8 +203,10 @@ class newsUrl:
         soup = BeautifulSoup(article.html, 'html.parser')
         for link in soup.find_all('a'):
             linkTemp = link.get('href')
-            if linkTemp.startswith('http'):
-                urlsArr.append(linkTemp)
+            # Breitbart style pages fix
+            if linkTemp != None:
+                if linkTemp.startswith('http'):
+                    urlsArr.append(linkTemp)
         return urlsArr
 
     # Natural language processing to generate summary and keywords from article
@@ -256,4 +218,3 @@ class newsUrl:
     def getSummary(self, article):
         article.nlp()
         return article.summary
-
