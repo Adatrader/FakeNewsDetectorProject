@@ -7,16 +7,15 @@ from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify, render_template
 # To make requests
 import requests
-nltk.download('punkt')  # TODO: Uncomment during deployment
+# nltk.download('punkt')  # TODO: Uncomment during local testing
 
 # Debug allows for changes to be seen in real time.
 app = flask.Flask(__name__)
-app.config["DEBUG"] = False  # TODO: Set to false during deployment
+app.config["DEBUG"] = False  # TODO: Set to True for local testing
 
 
 @app.route('/')
 def index():
-    # f = open('home.html')
     return render_template('index.html')
 
 # Unused now (Directs to postman)
@@ -41,20 +40,19 @@ def results():
 
         if urlPassed == '':
             return render_template('index.html', message='Please enter required field')
-    origin = "WebApp"
+    origin = "WebApp"  # Specify Web App origin for KB team
     obj = newsUrl(urlPassed, origin)
     # Returned dictionary from scraper
     dictObj = obj.createJSON(obj.url, obj.origin)
     jsonGenerated = jsonify(dictObj)  # Send to NN/KB Team
-    print(dictObj)
+    # print(dictObj)
     # TODO: Sent to NN team (get response with confidence score)
-    # returnedNN = requests.post(url = 'www.yourNNServer.com', data=jsonGenerated)
-    # tempConf = returnedNN['confidence_score']
-    # combinedObj['confidence_score'] = tempConf
+    headr = {'content-type': 'application/json', 'accept': '*/*'}
+    returnedNN = requests.post(
+        url='https://viksri.com/fakenewsproj/api', data=json.dumps(dictObj), headers=headr)
+    responseScore = returnedNN.json()
     return render_template('result.html', urlTitle=dictObj.get('url'),
-                           conf=dictObj.get('confidence_score'), result=dictObj.get('url_info'))
-
-# Submit new url for webscraping
+                           conf=responseScore['score']*100, result=dictObj.get('page_data'))
 
 
 @app.route('/api/v1/twitter', methods=['POST'])
@@ -63,17 +61,18 @@ def twitter():
     if content == None:
         return {"response": "400 Bad Request"}
     urlGiven = content['url']
-    origin = "Twitter"
+    origin = "Twitter"  # Specify Twitter origin for KB team
     obj = newsUrl(urlGiven, origin)
     # Returned dictionary from scraper
     dictObj = obj.createJSON(obj.url, obj.origin)
     combinedObj = Merge(content, dictObj)
     jsonGenerated = jsonify(combinedObj)
-    # TODO: Sent jsonGenerated NN /KB team (get response with confidence score)
-    # returnedNN = requests.post(url = 'www.yourNNServer.com', data=jsonGenerated)
-    # tempConf = returnedNN['confidence_score']
-    # combinedObj['confidence_score'] = tempConf
-    return jsonify(combinedObj)
+    # TODO: Sent to NN team (get response with confidence score)
+    headr = {'content-type': 'application/json', 'accept': '*/*'}
+    returnedNN = requests.post(
+        url='https://viksri.com/fakenewsproj/api', data=json.dumps(dictObj), headers=headr)
+    responseScore = returnedNN.json()
+    return responseScore
 
 
 @app.route('/api/v1/facebook', methods=['POST'])
@@ -82,17 +81,18 @@ def facebook():
     if content == None:
         return {"response": "400 Bad Request"}
     urlGiven = content['url']
-    origin = "Facebook"
+    origin = "Facebook"  # Specify Facebook origin for KB team
     obj = newsUrl(urlGiven, origin)
     # Returned dictionary from scraper
     dictObj = obj.createJSON(obj.url, obj.origin)
     combinedObj = Merge(content, dictObj)
     jsonGenerated = jsonify(combinedObj)
-    # TODO: Send jsonGenerated to NN / KB team (get response with confidence score)
-    # returnedNN = requests.post(url = 'www.yourNNServer.com', data=jsonGenerated)
-    # tempConf = returnedNN['confidence_score']
-    # combinedObj['confidence_score'] = tempConf
-    return jsonify(combinedObj)
+    # TODO: Sent to NN team (get response with confidence score)
+    headr = {'content-type': 'application/json', 'accept': '*/*'}
+    returnedNN = requests.post(
+        url='https://viksri.com/fakenewsproj/api', data=json.dumps(dictObj), headers=headr)
+    responseScore = returnedNN.json()
+    return responseScore
 
 
 # Merge two dictionaries
@@ -118,7 +118,7 @@ class newsUrl:
         except:
             totalDict = {'url': url}
             totalDict['origin'] = origin
-            totalDict['confidence_score'] = 0
+            totalDict['confidence_score'] = 0.5
             totalDict['url_info'] = "Unable to Parse"
             return totalDict
         author = self.getAuthor(article)
@@ -138,21 +138,22 @@ class newsUrl:
         # Create dictionary
         totalDict = {'url': url}
         totalDict['origin'] = origin
-        totalDict['confidence_score'] = 0
+        totalDict['confidence_score'] = 0.5
+        totalDict['isReal'] = 1  # Added for KB team (0 is fake, 1 is real)
         tempDict = {
             'title': title,
-            'site_name': str(siteName),
+            'publisher': str(siteName),
             'subtitle': str(subtitle),
-            'publish_date': str(date),
+            'publish_date_time': str(date),
             'authors': author,
             'natural_language_processing': {
                 'summary': summary,
                 'keywords': keywords
             },
-            'content': text,
+            'body': text,
             'citation_urls': citUrl
         }
-        totalDict['url_info'] = tempDict
+        totalDict['page_data'] = tempDict
 
         return totalDict
         # return jsonify(tempDict)
@@ -218,3 +219,6 @@ class newsUrl:
     def getSummary(self, article):
         article.nlp()
         return article.summary
+
+
+# app.run()
