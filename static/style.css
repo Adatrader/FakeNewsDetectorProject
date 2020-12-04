@@ -19,7 +19,7 @@ body {
 }
 
 .containerTable {
-  max-width: 780px;
+  max-width: 1200px;
   margin: 1rem auto;
   overflow: auto;
   padding: 0 2rem;
