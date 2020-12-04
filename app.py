@@ -5,6 +5,7 @@ import nltk
 import flask
 from bs4 import BeautifulSoup
 from flask import Flask, request, jsonify, render_template
+import json
 # To make requests
 import requests
 # nltk.download('punkt')  # TODO: Uncomment during local testing
@@ -51,8 +52,12 @@ def results():
     returnedNN = requests.post(
         url='https://viksri.com/fakenewsproj/api', data=json.dumps(dictObj), headers=headr)
     responseScore = returnedNN.json()
+    frontResult = "FAKE"
+    if responseScore['score'] == 1:
+        frontResult = "REAL"
+
     return render_template('result.html', urlTitle=dictObj.get('url'),
-                           conf=responseScore['score']*100, result=dictObj.get('page_data'))
+                           conf=frontResult, result=dictObj.get('page_data'))
 
 
 @app.route('/api/v1/twitter', methods=['POST'])
@@ -72,7 +77,26 @@ def twitter():
     returnedNN = requests.post(
         url='https://viksri.com/fakenewsproj/api', data=json.dumps(dictObj), headers=headr)
     responseScore = returnedNN.json()
-    return responseScore
+
+    # Reformat for Json Response
+    dictObj['confidence_score'] = responseScore['score']
+    tempDict = dictObj['page_data']
+    # Switch back to content
+    tempDict['content'] = tempDict['body']
+    del tempDict['body']
+    # Swtich publish date
+    tempDict['publish_date'] = tempDict['publish_date_time']
+    del tempDict['publish_date_time']
+    # Switch publisher
+    tempDict['site_name'] = tempDict['publisher']
+    del tempDict['publisher']
+    dictObj['url_info'] = tempDict
+    del dictObj['page_data']
+
+    # Merge response
+    combinedObj = Merge(content, dictObj)
+    jsonGenerated = jsonify(combinedObj)
+    return jsonGenerated
 
 
 @app.route('/api/v1/facebook', methods=['POST'])
@@ -85,14 +109,31 @@ def facebook():
     obj = newsUrl(urlGiven, origin)
     # Returned dictionary from scraper
     dictObj = obj.createJSON(obj.url, obj.origin)
-    combinedObj = Merge(content, dictObj)
-    jsonGenerated = jsonify(combinedObj)
     # TODO: Sent to NN team (get response with confidence score)
     headr = {'content-type': 'application/json', 'accept': '*/*'}
     returnedNN = requests.post(
         url='https://viksri.com/fakenewsproj/api', data=json.dumps(dictObj), headers=headr)
     responseScore = returnedNN.json()
-    return responseScore
+
+    # Reformat for Json Response
+    dictObj['confidence_score'] = responseScore['score']
+    tempDict = dictObj['page_data']
+    # Switch back to content
+    tempDict['content'] = tempDict['body']
+    del tempDict['body']
+    # Swtich publish date
+    tempDict['publish_date'] = tempDict['publish_date_time']
+    del tempDict['publish_date_time']
+    # Switch publisher
+    tempDict['site_name'] = tempDict['publisher']
+    del tempDict['publisher']
+    dictObj['url_info'] = tempDict
+    del dictObj['page_data']
+
+    # Merge response
+    combinedObj = Merge(content, dictObj)
+    jsonGenerated = jsonify(combinedObj)
+    return jsonGenerated
 
 
 # Merge two dictionaries
@@ -119,7 +160,7 @@ class newsUrl:
             totalDict = {'url': url}
             totalDict['origin'] = origin
             totalDict['confidence_score'] = 0.5
-            totalDict['url_info'] = "Unable to Parse"
+            totalDict['page_data'] = "Unable to Parse"
             return totalDict
         author = self.getAuthor(article)
         citUrl = self.getCitationUrls(article)
@@ -139,7 +180,6 @@ class newsUrl:
         totalDict = {'url': url}
         totalDict['origin'] = origin
         totalDict['confidence_score'] = 0.5
-        totalDict['isReal'] = 1  # Added for KB team (0 is fake, 1 is real)
         tempDict = {
             'title': title,
             'publisher': str(siteName),
