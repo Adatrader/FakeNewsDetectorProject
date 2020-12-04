@@ -1,7 +1,7 @@
 # Fake News Detector Rest API/Web App
 
 Deployed here: https://fakenewsurldetector.herokuapp.com/  
-API Documentation: https://documenter.getpostman.com/view/13246655/TVYGbcxp?
+API Documentation: <a href="doc:introduction" target="https://documenter.getpostman.com/view/13246655/TVYGbcxp?">Postman API Examples for Twitter/Facebook</a>
 
 ## Run Locally
 
@@ -29,15 +29,16 @@ Procfile, requirements, runtime, app.py, templates, and static files<br/>
 cd [location]
 Open git bash
 git init .
+git add app.py Procfile requirements.txt runtime.txt
+git commit -m 'Changes_that_occured'
+git push heroku master
+```
+
+<br/> Set up Heroku<br/>
+
+```
 heroku login -i
 heroku git:remote -a {your-project-name}
-```
-
-<br/> Push to Heroku<br/>
-
-```
-git add .
-git commit -m 'Changes_that_occured'
 git push heroku master
 
 To see logs:
